@@ -31,72 +31,59 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type ILiteReadStream =
-    abstract Position : int
-    abstract Length : int
-    abstract Seek : int -> unit
-    abstract Peek : int -> byte
-    abstract Skip : int -> unit
-    abstract ReadByte : unit -> byte
-    abstract ReadBytes : int -> byte []
-    abstract ReadString  : int -> string
-    abstract Read<'a when 'a : unmanaged> : unit -> 'a
+type LiteStream = {
+    mutable bytes: byte []
+    mutable position: int64 } with
 
-type ByteReadStream (bytes: byte []) =
-    let mutable position = 0
-    let length = bytes.Length
+    static member Create bytes =
+        { bytes = bytes; position = 0L }
 
-    interface ILiteReadStream with
-        member this.Position = position
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module LiteStream =
+    let inline seek offset stream = stream.position <- offset
 
-        member this.Length = length
+    let inline skip n stream = stream.position <- stream.position + n
 
-        member this.Seek offset = position <- offset
+    let inline readByte stream =
+        let result = stream.bytes.[int stream.position]
+        stream.position <- stream.position + 1L
+        result
 
-        member this.Peek offset = bytes.[position + offset]
+    let inline readBytes n stream =
+        let i = stream.position
+        stream.position <- stream.position + n
+        stream.bytes.[int i..int stream.position]
 
-        member this.Skip n = position <- position + n
+    let inline readString (n: int64) stream =
+        let s : nativeptr<sbyte> = (NativePtr.ofNativeInt <| NativePtr.toNativeInt &&stream.bytes.[int stream.position])
+        let result = String (s, 0, int n)
+        stream.position <- stream.position + n
+        result
 
-        member this.ReadByte () =
-            let result = bytes.[position]
-            position <- position + 1
-            result
+    let inline read<'a when 'a : unmanaged> stream =
+        let result = NativePtr.read (NativePtr.ofNativeInt<'a> <| NativePtr.toNativeInt &&stream.bytes.[int stream.position])
+        stream.position <- stream.position + int64 sizeof<'a>
+        result
 
-        member this.ReadBytes n =
-            let i = position
-            position <- position + n
-            bytes.[i..position]
-
-        member this.ReadString n = 
-            let s : nativeptr<sbyte> = (NativePtr.ofNativeInt <| NativePtr.toNativeInt &&bytes.[position])
-            let result = String (s, 0, n)
-            position <- position + n
-            result
-
-        member this.Read<'a when 'a : unmanaged> () =
-            let result = NativePtr.read (NativePtr.ofNativeInt<'a> <| NativePtr.toNativeInt &&bytes.[position])
-            position <- position + sizeof<'a>
-            result
-
-type Unpickle<'a> = ILiteReadStream -> 'a
+type Unpickle<'a> = LiteStream -> 'a
 
 let u_byte : Unpickle<byte> =
-    fun stream -> stream.ReadByte ()
+    fun stream -> LiteStream.readByte stream
 
 let u_bytes n : Unpickle<byte []> =
-    fun stream -> stream.ReadBytes (n)
+    fun stream -> LiteStream.readBytes n stream
 
 let u_int16 : Unpickle<int16> =
-    fun stream -> stream.Read<int16> ()
+    fun stream -> LiteStream.read stream
 
 let u_int32 : Unpickle<int> =
-    fun stream -> stream.Read<int32> ()
+    fun stream -> LiteStream.read stream
 
 let u_single : Unpickle<single> =
-    fun stream -> stream.Read<single> ()
+    fun stream -> LiteStream.read stream
 
 let inline u_string n : Unpickle<string> =
-    fun stream -> stream.ReadString n
+    fun stream -> LiteStream.readString n stream
 
 let inline u_pipe2 a b f : Unpickle<_> =
     fun stream -> f (a stream) (b stream)
@@ -135,7 +122,7 @@ let inline u_pipe13 a b c d e g h i j k l m n f : Unpickle<_> =
     fun stream -> f (a stream) (b stream) (c stream) (d stream) (e stream) (g stream) (h stream) (i stream) (j stream) (k stream) (l stream) (m stream) (n stream)
 
 let inline u<'a when 'a : unmanaged> : Unpickle<_> =
-    fun stream -> stream.Read<'a> ()
+    fun stream -> LiteStream.read<'a> stream
 
 let inline u_array n (p: Unpickle<'a>) =
     fun stream ->
@@ -144,13 +131,13 @@ let inline u_array n (p: Unpickle<'a>) =
         | _ -> Array.init n (fun _ -> p stream)
 
 let inline u_skipBytes n : Unpickle<_> =
-    fun stream -> stream.Skip (n)
+    fun stream -> LiteStream.skip n stream
 
 let inline u_lookAhead (p: Unpickle<'a>) : Unpickle<'a> =
     fun stream ->
-        let prevPosition = stream.Position
+        let prevPosition = stream.position
         let result = p stream
-        stream.Seek (prevPosition)
+        LiteStream.seek prevPosition stream
         result
 
 // fmap
@@ -179,4 +166,4 @@ let inline (.>>.) (u1: Unpickle<'a>) (u2: Unpickle<'b>) =
         u1 stream,
         u2 stream
 
-let inline u_run (p: Unpickle<_>) (bytes: byte []) = p <| ByteReadStream (bytes)
+let inline u_run (p: Unpickle<_>) x = p x
