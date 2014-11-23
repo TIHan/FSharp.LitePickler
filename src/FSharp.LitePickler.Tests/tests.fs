@@ -55,3 +55,9 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
     for i = 1 to 1000 do
         let data = unpickleMd3 <| LiteReadStream.ofBytes bytes
         ()
+
+[<Test>]
+let ``wad file`` () = 
+    let bytes = File.ReadAllBytes ("SCYTHE.WAD")
+    let wad = u_run Wad.u_wad <| LiteReadStream.ofBytes bytes
+    ()
