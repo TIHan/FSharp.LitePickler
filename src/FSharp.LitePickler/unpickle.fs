@@ -34,13 +34,14 @@ open Microsoft.FSharp.NativeInterop
 type LiteReadStream = {
     mutable bytes: byte []
     mutable position: int
-    Stream: Stream option } with
-
-    static member Create bytes =
-        { bytes = bytes; position = 0; Stream = None }
+    Stream: Stream option }
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module LiteReadStream =
+    let inline ofBytes bytes = { bytes = bytes; position = 0; Stream = None }
+
+    let inline ofStream stream = { bytes = Array.empty; position = -1; Stream = Some stream }
+
     let inline position lstream =
         match lstream.Stream with
         | None -> int64 lstream.position
