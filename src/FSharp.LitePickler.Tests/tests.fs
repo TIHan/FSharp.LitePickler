@@ -53,5 +53,5 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
     for i = 1 to 1000 do
-        let data = pickleMd3 md3//unpickleMd3 <| LiteReadStream.Create bytes
+        let data = unpickleMd3 <| LiteReadStream.Create bytes
         ()

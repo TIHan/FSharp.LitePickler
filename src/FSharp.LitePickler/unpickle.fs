@@ -31,7 +31,7 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type LiteReadStream = private {
+type LiteReadStream = {
     mutable bytes: byte []
     mutable position: int
     Stream: Stream option } with
@@ -41,22 +41,22 @@ type LiteReadStream = private {
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module LiteReadStream =
-    let position lstream =
+    let inline position lstream =
         match lstream.Stream with
         | None -> int64 lstream.position
         | Some stream -> stream.Position
 
-    let seek offset lstream =
+    let inline seek offset lstream =
         match lstream.Stream with
         | None ->  lstream.position <- int offset
         | Some stream -> stream.Position <- offset
 
-    let skip (n: int64) lstream = 
+    let inline skip (n: int64) lstream = 
         match lstream.Stream with
         | None -> lstream.position <- lstream.position + int n
         | Some stream -> stream.Position <- stream.Position + n
 
-    let readByte lstream =
+    let inline readByte lstream =
         match lstream.Stream with
         | None ->
             let result = lstream.bytes.[int lstream.position]
@@ -67,7 +67,7 @@ module LiteReadStream =
             | -1 -> failwith "Unable to read byte from stream."
             | result -> byte result
 
-    let readBytes n lstream =
+    let inline readBytes n lstream =
         match lstream.Stream with
         | None ->
             let i = lstream.position
@@ -78,7 +78,7 @@ module LiteReadStream =
             stream.Read (bytes, 0, n) |> ignore
             bytes
 
-    let readString (n: int) lstream =
+    let inline readString (n: int) lstream =
         match lstream.Stream with
         | None ->
             let s : nativeptr<sbyte> = (NativePtr.ofNativeInt <| NativePtr.toNativeInt &&lstream.bytes.[int lstream.position])
@@ -91,7 +91,7 @@ module LiteReadStream =
             let s : nativeptr<sbyte> = NativePtr.ofNativeInt <| NativePtr.toNativeInt &&bytes.[0]
             String (s, 0, int n)
 
-    let read<'a when 'a : unmanaged> lstream =
+    let inline read<'a when 'a : unmanaged> lstream =
         match lstream.Stream with
         | None ->
             let result = NativePtr.read (NativePtr.ofNativeInt<'a> <| NativePtr.toNativeInt &&lstream.bytes.[int lstream.position])
