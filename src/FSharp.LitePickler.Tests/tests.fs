@@ -15,7 +15,7 @@ let unpickleMd3 bytes = u_run u_md3 bytes
 
 let pickleMd3 md3 =
     use stream = File.Create ("test.md3")
-    p_run p_md3 md3 stream
+    p_run p_md3 md3 (LiteWriteStream.Create stream)
     stream.Close ()
     File.ReadAllBytes ("test.md3")
 
@@ -52,6 +52,6 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
     md3.Surfaces.Length |> should be (greaterThan 0)
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
-    for i = 1 to 4000 do
-        let data = unpickleMd3 <| LiteReadStream.Create bytes
+    for i = 1 to 1000 do
+        let data = pickleMd3 md3//unpickleMd3 <| LiteReadStream.Create bytes
         ()

@@ -6,15 +6,10 @@ open FSharp.LitePickler.Pickle
 open FSharp.Game.Data
 
 let p_vec2 : Pickle<Vector2> =
-    fun v stream ->
-        Stream.write v.X stream
-        Stream.write v.Y stream
+    fun v stream -> LiteWriteStream.write v stream
 
 let p_vec3 : Pickle<Vector3> =
-    fun v stream ->
-        Stream.write v.X stream
-        Stream.write v.Y stream
-        Stream.write v.Z stream
+    fun v stream -> LiteWriteStream.write v stream
 
 let p_frame =
     p_pipe5 p_vec3 p_vec3 p_vec3 p_single (p_string 16 StringKind.EightBit) <|

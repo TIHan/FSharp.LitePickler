@@ -31,26 +31,60 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type Pickle<'a> = 'a -> Stream -> unit
+type LiteWriteStream = private {
+    mutable bytes: byte []
+    mutable position: int
+    Stream: Stream option } with
 
-module Stream =
-    let write<'a when 'a : unmanaged> (a: 'a) (stream: Stream) =
-        let mutable a = a
-        let size = sizeof<'a>
-        let ptr : nativeptr<byte> = &&a |> NativePtr.toNativeInt |> NativePtr.ofNativeInt
+    static member Create bytes =
+        { bytes = bytes; position = 0; Stream = None }
 
-        for i = 1 to size do
-            stream.WriteByte (NativePtr.get ptr (i - 1))
+    static member Create stream =
+        { bytes = Array.empty; position = 0; Stream = Some stream }
 
-    let writeString n kind (string: string) (stream: Stream) =
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module LiteWriteStream =
+    let position lstream =
+        match lstream.Stream with
+        | None -> int64 lstream.position
+        | Some stream -> stream.Position
+
+    let seek offset lstream =
+        match lstream.Stream with
+        | None ->  lstream.position <- int offset
+        | Some stream -> stream.Position <- offset
+
+    let skip n lstream = 
+        match lstream.Stream with
+        | None -> lstream.position <- lstream.position + int n
+        | Some stream -> stream.Position <- stream.Position + n
+
+    let writeByte x lstream =
+        match lstream.Stream with
+        | None ->
+            lstream.bytes.[int lstream.position] <- x
+            lstream.position <- lstream.position + 1
+        | Some stream ->
+            stream.WriteByte x
+
+    let writeBytes (n: int) (xs: byte []) lstream =
+        match lstream.Stream with
+        | None ->
+            for i = 0 to n - 1 do
+                lstream.bytes.[int lstream.position] <- xs.[i]
+                lstream.position <- lstream.position + 1
+        | Some stream ->
+            stream.Write (xs, 0, int n)
+
+    let writeString (n: int) kind (str: string) lstream =
         match kind with
         | EightBit ->
-            let length = string.Length
+            let length = str.Length
 
             for i = 0 to n - 1 do
                 if i >= length
-                then stream.WriteByte (0uy)
-                else stream.WriteByte (byte <| sbyte string.[i])
+                then writeByte (0uy) lstream
+                else writeByte (byte <| sbyte str.[i]) lstream
  
         | _ ->
             let encoding =
@@ -63,31 +97,41 @@ module Stream =
                 | UTF8 -> System.Text.Encoding.UTF8
                 | _ -> System.Text.Encoding.Default
 
-            let bytes = encoding.GetBytes (string)
+            let bytes = encoding.GetBytes (str)
             let length = bytes.Length
 
             for i = 0 to n - 1 do
                 if i >= length
-                then stream.WriteByte (0uy)
-                else stream.WriteByte (bytes.[i])
+                then writeByte (0uy) lstream
+                else writeByte (bytes.[i]) lstream
+
+    let write<'a when 'a : unmanaged> (x: 'a) lstream =
+        let mutable x = x
+        let size = sizeof<'a>
+        let ptr : nativeptr<byte> = &&x |> NativePtr.toNativeInt |> NativePtr.ofNativeInt
+
+        for i = 1 to size do
+            writeByte (NativePtr.get ptr (i - 1)) lstream
+
+type Pickle<'a> = 'a -> LiteWriteStream -> unit
 
 let p_byte : Pickle<byte> =
-    fun x stream -> stream.WriteByte x
+    fun x stream -> LiteWriteStream.writeByte x stream
 
 let inline p_bytes n : Pickle<byte []> =
-    fun xs stream -> stream.Write (xs, 0, n)
+    fun xs stream -> LiteWriteStream.writeBytes n xs stream
 
 let p_int16 : Pickle<int16> =
-    fun x stream -> Stream.write<int16> x stream
+    fun x stream -> LiteWriteStream.write x stream
 
 let p_int32 : Pickle<int32> =
-    fun x stream -> Stream.write<int32> x stream
+    fun x stream -> LiteWriteStream.write x stream
 
 let p_single : Pickle<single> =
-    fun x stream -> Stream.write<single> x stream
+    fun x stream -> LiteWriteStream.write x stream
 
-let p_string n kind : Pickle<string> =
-    fun x stream -> Stream.writeString n kind x stream
+let inline p_string n kind : Pickle<string> =
+    fun x stream -> LiteWriteStream.writeString n kind x stream
 
 let inline p_pipe2 a b f : Pickle<_> =
     fun x stream -> 
@@ -228,7 +272,7 @@ let inline p_pipe13 a b c d e g h i j k l m n f : Pickle<_> =
         (n stream n')
 
 let p : Pickle<_> =
-    fun x stream -> stream.Write x
+    fun x stream -> LiteWriteStream.write x stream
 
 let inline p_array n (p: Pickle<'a>) : Pickle<'a[]> =
     fun xs stream ->
@@ -237,13 +281,13 @@ let inline p_array n (p: Pickle<'a>) : Pickle<'a[]> =
         | _ -> for i = 0 to n - 1 do p xs.[i] stream
 
 let inline p_skipBytes n : Pickle<_> =
-    fun _ stream -> stream.Seek (n, SeekOrigin.Current) |> ignore
+    fun _ stream -> LiteWriteStream.seek n stream
 
 let inline p_lookAhead (p: Pickle<_>) : Pickle<_> =
     fun x stream ->
-        let prevPosition = stream.Position
+        let prevPosition = LiteWriteStream.position stream
         p x stream
-        stream.Seek (prevPosition, SeekOrigin.Begin) |> ignore
+        LiteWriteStream.seek prevPosition stream
 
 // contramap
 let inline (>>|) (p: Pickle<'a>) (f: 'b -> 'a) : Pickle<'b> =
