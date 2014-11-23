@@ -49,6 +49,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Compile Include="wad.fs" />
     <Compile Include="md3.fs" />
     <Compile Include="unpickleMd3.fs" />
     <Compile Include="pickleMd3.fs" />

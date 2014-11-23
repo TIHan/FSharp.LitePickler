@@ -115,10 +115,22 @@ let u_bytes n : Unpickle<byte []> =
 let u_int16 : Unpickle<int16> =
     fun stream -> LiteReadStream.read stream
 
+let u_uint16 : Unpickle<uint16> =
+    fun stream -> LiteReadStream.read stream
+
 let u_int32 : Unpickle<int> =
     fun stream -> LiteReadStream.read stream
 
+let u_uint32 : Unpickle<uint32> =
+    fun stream -> LiteReadStream.read stream
+
 let u_single : Unpickle<single> =
+    fun stream -> LiteReadStream.read stream
+
+let u_int64 : Unpickle<int64> =
+    fun stream -> LiteReadStream.read stream
+
+let u_uint64 : Unpickle<uint64> =
     fun stream -> LiteReadStream.read stream
 
 let inline u_string n : Unpickle<string> =

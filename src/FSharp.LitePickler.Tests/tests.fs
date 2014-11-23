@@ -60,4 +60,18 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
 let ``wad file`` () = 
     let bytes = File.ReadAllBytes ("SCYTHE.WAD")
     let wad = u_run Wad.u_wad <| LiteReadStream.ofBytes bytes
+    let lumpNodes =
+        wad.LumpHeaders
+        |> Array.choose (fun x -> 
+            if x.Name.Contains ("NODES") then
+                Some <| (u_run (Wad.u_lumpNode x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
+    let lumpSubSectors =
+        wad.LumpHeaders
+        |> Array.choose (fun x ->
+            if x.Name.Contains ("SSECTORS") then
+                Some <| (u_run (Wad.u_lumpSubsector x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
     ()
