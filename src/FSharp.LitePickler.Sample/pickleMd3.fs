@@ -1,6 +1,7 @@
 ﻿module FSharp.Game.Data.Pickle.Md3
 
 open System.Numerics
+open FSharp.LitePickler.Core
 open FSharp.LitePickler.Pickle
 open FSharp.Game.Data
 

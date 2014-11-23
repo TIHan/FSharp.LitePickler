@@ -47,6 +47,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="core.fs" />
     <Compile Include="pickle.fs" />
     <Compile Include="unpickle.fs" />
   </ItemGroup>

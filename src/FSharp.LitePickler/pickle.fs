@@ -31,16 +31,6 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type StringKind =
-    | Default
-    | EightBit
-    | ASCII
-    | BigEndianUnicode
-    | Unicode
-    | UTF32
-    | UTF7
-    | UTF8
-
 type Pickle<'a> = 'a -> Stream -> unit
 
 module Stream =

@@ -22,12 +22,12 @@ let pickleMd3 md3 =
 [<Test>]
 let ``with an arachnatron head md3, parsing should succeed and have a valid surface.`` () = 
     let bytes = File.ReadAllBytes ("head.md3")
-    let md3 = unpickleMd3 <| LiteStream.Create bytes
+    let md3 = unpickleMd3 <| LiteReadStream.Create bytes
     md3.Surfaces.Length |> should be (greaterThan 0)
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
     let data = pickleMd3 md3
-    let secondMd3 = unpickleMd3 <| LiteStream.Create bytes
+    let secondMd3 = unpickleMd3 <| LiteReadStream.Create bytes
 
     Assert.AreEqual (md3.Tags.Length, secondMd3.Tags.Length)
     Assert.AreEqual (md3, secondMd3)
@@ -35,12 +35,12 @@ let ``with an arachnatron head md3, parsing should succeed and have a valid surf
 [<Test>]
 let ``with an arachnatron upper md3, parsing should succeed and have a valid surface.`` () = 
     let bytes = File.ReadAllBytes ("upper.md3")
-    let md3 = unpickleMd3 <| LiteStream.Create bytes
+    let md3 = unpickleMd3 <| LiteReadStream.Create bytes
     md3.Surfaces.Length |> should be (greaterThan 0)
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
     let data = pickleMd3 md3
-    let secondMd3 = unpickleMd3 <| LiteStream.Create bytes
+    let secondMd3 = unpickleMd3 <| LiteReadStream.Create bytes
 
     Assert.AreEqual (md3.Tags.Length, secondMd3.Tags.Length)
     Assert.AreEqual (md3, secondMd3)
@@ -48,10 +48,10 @@ let ``with an arachnatron upper md3, parsing should succeed and have a valid sur
 [<Test>]
 let ``with an arachnatron lower md3, parsing should succeed and have a valid surface.`` () = 
     let bytes = File.ReadAllBytes ("lower.md3")
-    let md3 = unpickleMd3 <| LiteStream.Create bytes
+    let md3 = unpickleMd3 <| LiteReadStream.Create bytes
     md3.Surfaces.Length |> should be (greaterThan 0)
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
-    for i = 1 to 1000 do
-        let data = unpickleMd3 <| LiteStream.Create bytes
+    for i = 1 to 4000 do
+        let data = unpickleMd3 <| LiteReadStream.Create bytes
         ()
