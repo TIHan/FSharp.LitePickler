@@ -3,9 +3,11 @@
 open FSharp.LitePickler.Unpickle
 open FSharp.LitePickler.Pickle
 
-open FSharp.Game.Data
-open FSharp.Game.Data.Unpickle.Md3
-open FSharp.Game.Data.Pickle.Md3
+open FSharp.Game.Data.Md3
+open FSharp.Game.Data.Md3.Unpickle
+open FSharp.Game.Data.Md3.Pickle
+open FSharp.Game.Data.Wad
+open FSharp.Game.Data.Wad.Unpickle
 
 open System.IO
 open FsUnit
@@ -59,20 +61,21 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
 [<Test>]
 let ``wad file`` () = 
     let bytes = File.ReadAllBytes ("SCYTHE.WAD")
-    let wad = u_run Wad.u_wad <| LiteReadStream.ofBytes bytes
+    let wad = u_run u_wad <| LiteReadStream.ofBytes bytes
     
     let lumpNodes =
         wad.LumpHeaders
         |> Array.choose (fun x -> 
             if x.Name.Contains ("NODES") then
-                Some <| (u_run (Wad.u_lumpNodes x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+                Some <| (u_run (u_lumpNodes x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
             else
                 None)
+
     let lumpSubsectors =
         wad.LumpHeaders
         |> Array.choose (fun x ->
             if x.Name.Contains ("SSECTORS") then
-                Some <| (u_run (Wad.u_lumpSubsectors x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+                Some <| (u_run (u_lumpSubsectors x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
             else
                 None)
 
@@ -80,7 +83,32 @@ let ``wad file`` () =
         wad.LumpHeaders
         |> Array.choose (fun x ->
             if x.Name.Contains ("THINGS") then
-                Some <| (u_run (Wad.u_lumpThings x.Size (int64 x.Offset) Wad.ThingFormat.Doom) <| LiteReadStream.ofBytes bytes)
+                Some <| (u_run (u_lumpThings ThingFormat.Doom x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
             else
                 None)
+
+    let lumpLinedefs =
+        wad.LumpHeaders
+        |> Array.choose (fun x ->
+            if x.Name.Contains ("LINEDEFS") then
+                Some <| (u_run (u_lumpLinedefs x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
+
+    let lumpSidedefs =
+        wad.LumpHeaders
+        |> Array.choose (fun x ->
+            if x.Name.Contains ("SIDEDEFS") then
+                Some <| (u_run (u_lumpSidedefs x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
+
+    let lumpVertices =
+        wad.LumpHeaders
+        |> Array.choose (fun x ->
+            if x.Name.Contains ("VERTEXES") then
+                Some <| (u_run (u_lumpVertices x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
+
     ()

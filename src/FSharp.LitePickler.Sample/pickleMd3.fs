@@ -1,9 +1,9 @@
-﻿module FSharp.Game.Data.Pickle.Md3
+﻿module FSharp.Game.Data.Md3.Pickle
 
 open System.Numerics
 open FSharp.LitePickler.Core
 open FSharp.LitePickler.Pickle
-open FSharp.Game.Data
+open FSharp.Game.Data.Md3
 
 let p_vec2 : Pickle<Vector2> =
     fun v stream -> LiteWriteStream.write v stream

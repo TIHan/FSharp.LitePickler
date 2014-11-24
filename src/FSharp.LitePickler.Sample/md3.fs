@@ -1,4 +1,4 @@
-﻿namespace FSharp.Game.Data
+﻿namespace FSharp.Game.Data.Md3
 
 open System
 open System.Numerics

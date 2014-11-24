@@ -1,8 +1,8 @@
-﻿module FSharp.Game.Data.Unpickle.Md3
+﻿module FSharp.Game.Data.Md3.Unpickle
 
 open System.Numerics
 open FSharp.LitePickler.Unpickle
-open FSharp.Game.Data
+open FSharp.Game.Data.Md3
 
 let u_vec2 : Unpickle<Vector2> = u
 
