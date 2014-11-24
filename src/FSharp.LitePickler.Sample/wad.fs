@@ -10,19 +10,48 @@ open FSharp.LitePickler.Unpickle
 module Wad =
     type Header = { IsPwad: bool; LumpCount: int; LumpOffset: int }
  
+    type LumpHeader = { Offset: int32; Size: int32; Name: string }
+ 
+    type Wad = { Header: Header; LumpHeaders: LumpHeader [] }
+
+    type ThingFormat =
+        | Doom = 0
+        | Hexen = 1
+
     [<Flags>]
-    type ThingFlags =
+    type DoomThingFlags =
         | SkillLevelOneAndTwo = 0x001
         | SkillLevelThree = 0x002
         | SkillLevelFourAndFive = 0x004
         | Deaf = 0x008
         | NotInSinglePlayer = 0x0010
+        | NotInDeathmatch = 0x0020 // boom
+        | NotInCoop = 0x0040 // boom
+        | FriendlyMonster = 0x0080 // MBF
+
+    [<Flags>]
+    type HexenThingFlags =
+        | SkillLevelOneAndTwo = 0x001
+        | SkillLevelThree = 0x002
+        | SkillLevelFourAndFive = 0x004
+        | Deaf = 0x008
+        | Dormant = 0x0010
+        | AppearOnlyToFighterClass = 0x0020
+        | AppearOnlyToClericClass = 0x0040
+        | AppearOnlyToMageClass = 0x0080
+        | AppearOnlyInSinglePlayer = 0x0100
+        | AppearOnlyInCoop = 0x0200
+        | AppearOnlyInDeathmatch = 0x0400
  
-    type Thing = { X: int16; Y: int16; Angle: int16; Type: int16; Flags: ThingFlags }
- 
-    type LumpHeader = { Offset: int32; Size: int32; Name: string }
- 
-    type Wad = { Header: Header; LumpHeaders: LumpHeader [] }
+    type DoomThing = { X: int; Y: int; Angle: int; Flags: DoomThingFlags }
+
+    type HexenThing = { Id: int; X: int; Y: int; StartingHeight: int; Angle: int; Flags: HexenThingFlags; Arg1: byte; Arg2: byte; Arg3: byte; Arg4: byte; Arg5: byte }
+
+    type Thing =
+        | Doom of DoomThing
+        | Hexen of HexenThing
+
+    type LumpThings = { Things: Thing [] }
 
     type ChildType =
         | Subnode = 1
@@ -53,7 +82,7 @@ module Wad =
               RightChildType = rightChildType
               LeftChildType = leftChildType }
 
-    type LumpNode = { Nodes: Node [] }
+    type LumpNodes = { Nodes: Node [] }
 
     [<Struct>]
     type Subsector =
@@ -62,7 +91,7 @@ module Wad =
 
         new (segCount, firstSegNumber) = { SegCount = segCount; FirstSegNumber = firstSegNumber }
 
-    type LumpSubsector = { Subsectors: Subsector [] }
+    type LumpSubsectors = { Subsectors: Subsector [] }
 
     let u_header : Unpickle<Header> =
         u_pipe3 (u_string 4) u_int32 u_int32 <|
@@ -80,6 +109,27 @@ module Wad =
     let u_wad : Unpickle<Wad> =
         u_lookAhead u_header >>= fun header ->
             (u_lookAhead <| (u_lumpHeaders header.LumpCount (int64 header.LumpOffset)) |>> (fun lumpHeaders -> { Header = header; LumpHeaders = lumpHeaders }))
+
+    [<Literal>]
+    let doomThingSize = 10
+    [<Literal>]
+    let hexenThingSize = 20
+    let u_thing format : Unpickle<Thing> =
+        match format with
+        | ThingFormat.Doom ->
+            u_pipe5 u_int16 u_int16 u_int16 u_int16 u_int16 <|
+            fun x y angle _ flags ->
+                Thing.Doom { X = int x; Y = int y; Angle = int angle; Flags = enum<DoomThingFlags> (int flags) }
+        | _ -> failwith "Not supported."
+
+    let u_things count offset format : Unpickle<Thing []> =
+        u_skipBytes offset >>. u_array count (u_thing format)
+
+    let u_lumpThings size offset format : Unpickle<LumpThings> =
+        match format with
+        | ThingFormat.Doom ->
+            u_lookAhead (u_things (size / doomThingSize) offset format) |>> fun things -> { Things = things }
+        | _ -> failwith "Not supported."
 
     [<Literal>] 
     let nodeSize = 28
@@ -107,7 +157,7 @@ module Wad =
     let u_nodes count offset : Unpickle<Node []> =
         u_skipBytes offset >>. u_array count u_node
 
-    let u_lumpNode size offset : Unpickle<LumpNode> =
+    let u_lumpNodes size offset : Unpickle<LumpNodes> =
         u_lookAhead (u_nodes (size / nodeSize) offset) |>> fun nodes -> { Nodes = nodes }
 
     [<Literal>] 
@@ -120,5 +170,5 @@ module Wad =
     let u_subsectors count offset : Unpickle<Subsector []> =
         u_skipBytes offset >>. u_array count u_subsector
 
-    let u_lumpSubsector size offset : Unpickle<LumpSubsector> =
+    let u_lumpSubsectors size offset : Unpickle<LumpSubsectors> =
         u_lookAhead (u_subsectors (size / subsectorSize) offset) |>> fun subsectors -> { Subsectors = subsectors }
