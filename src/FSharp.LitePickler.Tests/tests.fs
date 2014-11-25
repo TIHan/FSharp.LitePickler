@@ -111,4 +111,12 @@ let ``wad file`` () =
             else
                 None)
 
+    let lumpSectors =
+        wad.LumpHeaders
+        |> Array.choose (fun x ->
+            if x.Name.Contains ("SECTORS") && not <| x.Name.Contains ("SSECTORS") then
+                Some <| (u_run (u_lumpSectors x.Size (int64 x.Offset)) <| LiteReadStream.ofBytes bytes)
+            else
+                None)
+
     ()

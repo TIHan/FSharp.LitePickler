@@ -6,6 +6,8 @@ open FSharp.LitePickler.Core
 open FSharp.LitePickler.Unpickle
 open FSharp.Game.Data.Wad
 
+let fixedToSingle x = (single x / 65536.f)
+
 let u_header : Unpickle<Header> =
     u_pipe3 (u_string 4) u_int32 u_int32 <|
     fun id lumpCount lumpOffset ->
@@ -135,3 +137,22 @@ let u_subsectors count offset : Unpickle<Subsector []> =
 
 let u_lumpSubsectors size offset : Unpickle<LumpSubsectors> =
     u_lookAhead (u_subsectors (size / subsectorSize) offset) |>> fun subsectors -> { Subsectors = subsectors }
+
+[<Literal>]
+let sectorSize = 26
+let u_sector : Unpickle<Sector> =
+    u_pipe7 u_int16 u_int16 (u_string 8) (u_string 8) u_int16 u_int16 u_int16 <|
+    fun floorHeight ceilingHeight floorTexName ceilingTexName lightLevel typ tag ->
+        { FloorHeight = int floorHeight
+          CeilingHeight = int ceilingHeight
+          FloorTextureName = floorTexName.Trim().Trim('\000')
+          CeilingTextureName = ceilingTexName.Trim().Trim('\000')
+          LightLevel = int lightLevel
+          Type = enum<SectorType> (int typ)
+          Tag = int tag }
+
+let u_sectors count offset : Unpickle<Sector []> =
+    u_skipBytes offset >>. u_array count u_sector
+
+let u_lumpSectors size offset : Unpickle<LumpSectors> =
+    u_lookAhead (u_sectors (size / sectorSize) offset) |>> fun sectors -> { Sectors = sectors }
