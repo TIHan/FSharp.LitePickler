@@ -73,9 +73,9 @@ let u_sidedef : Unpickle<Sidedef> =
     fun offsetX offsetY upperTexName lowerTexName middleTexName sectorNumber ->
         { OffsetX = int offsetX
           OffsetY = int offsetY
-          UpperTextureName = upperTexName.Trim ()
-          LowerTextureName = lowerTexName.Trim ()
-          MiddleTextureName = middleTexName.Trim ()
+          UpperTextureName = upperTexName.Trim().Trim('\000')
+          LowerTextureName = lowerTexName.Trim().Trim('\000')
+          MiddleTextureName = middleTexName.Trim().Trim('\000')
           SectorNumber = int sectorNumber }
 
 let u_sidedefs count offset : Unpickle<Sidedef []> =
