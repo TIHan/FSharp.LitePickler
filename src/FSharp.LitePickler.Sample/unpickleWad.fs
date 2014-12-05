@@ -16,7 +16,7 @@ let u_header : Unpickle<Header> =
           LumpOffset = lumpOffset }
 
 let u_lumpHeader : Unpickle<LumpHeader> =
-    u_pipe3 u_int32 u_int32 (u_string 8) <| fun offset size name -> { Offset = offset; Size = size; Name = name }
+    u_pipe3 u_int32 u_int32 (u_string 8) <| fun offset size name -> { Offset = offset; Size = size; Name = name.Trim().Trim('\000') }
 
 let u_lumpHeaders count offset : Unpickle<LumpHeader []> =
     u_skipBytes offset >>. u_array count u_lumpHeader
@@ -49,7 +49,7 @@ let u_lumpThings format size offset : Unpickle<LumpThings> =
 [<Literal>]
 let linedefSize = 14
 let u_linedef : Unpickle<Linedef> =
-    u_pipe7 u_int16 u_int16 u_int16 u_int16 u_int16 u_int16 u_int16 <|
+    u_pipe7 u_uint16 u_uint16 u_int16 u_int16 u_int16 u_uint16 u_uint16 <|
     fun startVertex endVertex flags specialType sectorTag rightSidedef leftSidedef ->
         { StartVertex = int startVertex
           EndVertex = int endVertex
