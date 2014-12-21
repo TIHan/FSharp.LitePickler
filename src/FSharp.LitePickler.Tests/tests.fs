@@ -29,10 +29,10 @@ let ``with an arachnatron head md3, parsing should succeed and have a valid surf
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
     let data = pickleMd3 md3
-    let secondMd3 = unpickleMd3 <| LiteReadStream.ofBytes bytes
+    let secondMd3 = unpickleMd3 <| LiteReadStream.ofBytes data
 
     Assert.AreEqual (md3.Tags.Length, secondMd3.Tags.Length)
-    Assert.AreEqual (md3, secondMd3)
+    Assert.True ((md3 = secondMd3))
 
 [<Test>]
 let ``with an arachnatron upper md3, parsing should succeed and have a valid surface.`` () = 
@@ -42,10 +42,10 @@ let ``with an arachnatron upper md3, parsing should succeed and have a valid sur
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
     let data = pickleMd3 md3
-    let secondMd3 = unpickleMd3 <| LiteReadStream.ofBytes bytes
+    let secondMd3 = unpickleMd3 <| LiteReadStream.ofBytes data
 
     Assert.AreEqual (md3.Tags.Length, secondMd3.Tags.Length)
-    Assert.AreEqual (md3, secondMd3)
+    Assert.True ((md3 = secondMd3))
 
 [<Test>]
 let ``with an arachnatron lower md3, parsing should succeed and have a valid surface.`` () = 
@@ -54,9 +54,11 @@ let ``with an arachnatron lower md3, parsing should succeed and have a valid sur
     md3.Surfaces.Length |> should be (greaterThan 0)
     md3.Surfaces.[0].Header.Ident |> should equal "IDP3"
 
-    for i = 1 to 1000 do
-        let data = unpickleMd3 <| LiteReadStream.ofBytes bytes
-        ()
+    let data = pickleMd3 md3
+    let secondMd3 = unpickleMd3 <| LiteReadStream.ofBytes data
+
+    Assert.AreEqual (md3.Tags.Length, secondMd3.Tags.Length)
+    Assert.True ((md3 = secondMd3))
 
 [<Test>]
 let ``wad file`` () = 

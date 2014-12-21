@@ -279,7 +279,7 @@ let inline p_array n (p: Pickle<'a>) : Pickle<'a[]> =
         | _ -> for i = 0 to n - 1 do p xs.[i] stream
 
 let inline p_skipBytes n : Pickle<_> =
-    fun _ stream -> LiteWriteStream.seek n stream
+    fun _ stream -> LiteWriteStream.skip n stream
 
 let inline p_lookAhead (p: Pickle<_>) : Pickle<_> =
     fun x stream ->
