@@ -70,7 +70,7 @@ let p_triangle =
         x.y, 
         x.z
 
-let p_st = p_vec2 >>| fun (x: Md3St) -> x.st
+let p_st = p_vec2 -|>> fun (x: Md3St) -> x.st
  
 let p_vertex =
     p_pipe5 p_int16 p_int16 p_int16 p_byte p_byte <|
@@ -156,7 +156,7 @@ let p_surfaces count offset =
                 p_skipBytes (int64 x.Header.EndOffset) x stream)
 
 let p_md3 : Pickle<_> =
-    (p_lookAhead p_header) =>> fun md3 ->
+    (p_lookAhead p_header) ->>= fun md3 ->
         let header = md3.Header
         header,
         p_pipe3
