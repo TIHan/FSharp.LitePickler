@@ -64,15 +64,15 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Numerics.Vectors">
-      <HintPath>..\..\packages\System.Numerics.Vectors.1.1.5-beta\lib\portable-net45+win8\System.Numerics.Vectors.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <ProjectReference Include="..\FSharp.LitePickler\FSharp.LitePickler.fsproj">
       <Name>FSharp.LitePickler</Name>
       <Project>{db8a34bc-ecfd-492b-a764-7672f77a1b35}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\..\packages\System.Numerics.Vectors.1.1.6-beta\lib\portable-net45+win8\System.Numerics.Vectors.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
