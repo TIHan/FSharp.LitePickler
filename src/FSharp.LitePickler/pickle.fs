@@ -31,33 +31,33 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type LiteWriteStream = {
+type LiteWriteStream = private {
     mutable bytes: byte []
     mutable position: int
     Stream: Stream option }
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module LiteWriteStream =
-    let inline ofBytes bytes = { bytes = bytes; position = 0; Stream = None }
+    let ofBytes bytes = { bytes = bytes; position = 0; Stream = None }
 
-    let inline ofStream stream = { bytes = Array.empty; position = -1; Stream = Some stream }
+    let ofStream stream = { bytes = Array.empty; position = -1; Stream = Some stream }
 
-    let inline position lstream =
+    let position lstream =
         match lstream.Stream with
         | None -> int64 lstream.position
         | Some stream -> stream.Position
 
-    let inline seek offset lstream =
+    let seek offset lstream =
         match lstream.Stream with
         | None ->  lstream.position <- int offset
         | Some stream -> stream.Position <- offset
 
-    let inline skip n lstream = 
+    let skip n lstream = 
         match lstream.Stream with
         | None -> lstream.position <- lstream.position + int n
         | Some stream -> stream.Position <- stream.Position + n
 
-    let inline writeByte x lstream =
+    let writeByte x lstream =
         match lstream.Stream with
         | None ->
             lstream.bytes.[int lstream.position] <- x
@@ -65,7 +65,7 @@ module LiteWriteStream =
         | Some stream ->
             stream.WriteByte x
 
-    let inline writeBytes (n: int) (xs: byte []) lstream =
+    let writeBytes (n: int) (xs: byte []) lstream =
         match lstream.Stream with
         | None ->
             for i = 0 to n - 1 do
@@ -74,7 +74,7 @@ module LiteWriteStream =
         | Some stream ->
             stream.Write (xs, 0, int n)
 
-    let inline writeString (n: int) kind (str: string) lstream =
+    let writeString (n: int) kind (str: string) lstream =
         match kind with
         | EightBit ->
             let length = str.Length
@@ -103,7 +103,7 @@ module LiteWriteStream =
                 then writeByte (0uy) lstream
                 else writeByte (bytes.[i]) lstream
 
-    let inline write<'a when 'a : unmanaged> (x: 'a) lstream =
+    let write<'a when 'a : unmanaged> (x: 'a) lstream =
         let mutable x = x
         let size = sizeof<'a>
         let ptr : nativeptr<byte> = &&x |> NativePtr.toNativeInt |> NativePtr.ofNativeInt

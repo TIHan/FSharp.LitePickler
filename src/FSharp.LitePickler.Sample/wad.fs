@@ -84,42 +84,6 @@ type Vertex =
 
     new (x, y) = { X = x; Y = y }
 
-type ChildNodeType =
-    | Subnode = 1
-    | Subsector = 2
-
-[<Struct>]
-type Node =
-    val StartLineX: uint16
-    val StartLineY: uint16
-    val EndLineX: uint16
-    val EndLineY: uint16
-    val RightBoundingBox: uint64
-    val LeftBoundingBox: uint64
-    val RightChild: uint16
-    val LeftChild: uint16
-    val RightChildType: ChildNodeType
-    val LeftChildType: ChildNodeType
-
-    new (startLineX, startLineY, endLineX, endLineY, rightBoundingBox, leftBoundingBox, rightChild, leftChild, rightChildType, leftChildType) =
-        { StartLineX = startLineX
-          StartLineY = startLineY
-          EndLineX = endLineX
-          EndLineY = endLineY
-          RightBoundingBox = rightBoundingBox
-          LeftBoundingBox = leftBoundingBox
-          RightChild = rightChild
-          LeftChild = leftChild
-          RightChildType = rightChildType
-          LeftChildType = leftChildType }
-
-[<Struct>]
-type Subsector =
-    val SegCount: int
-    val FirstSegNumber: int
-
-    new (segCount, firstSegNumber) = { SegCount = segCount; FirstSegNumber = firstSegNumber }
-
 type SectorType =
     | Normal = 0
     | BlinkLightRandom = 1
@@ -151,6 +115,4 @@ type LumpThings = { Things: Thing [] }
 type LumpLinedefs = { Linedefs: Linedef [] }
 type LumpSidedefs = { Sidedefs: Sidedef [] }
 type LumpVertices = { Vertices: Vertex [] }
-type LumpNodes = { Nodes: Node [] }
-type LumpSubsectors = { Subsectors: Subsector [] }
 type LumpSectors = { Sectors: Sector [] }

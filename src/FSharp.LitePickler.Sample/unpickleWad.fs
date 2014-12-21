@@ -6,7 +6,7 @@ open FSharp.LitePickler.Core
 open FSharp.LitePickler.Unpickle
 open FSharp.Game.Data.Wad
 
-let fixedToSingle x = (single x / 65536.f)
+let inline fixedToSingle x = (single x / 65536.f)
 
 let u_header : Unpickle<Header> =
     u_pipe3 (u_string 4) u_int32 u_int32 <|
@@ -95,48 +95,6 @@ let u_vertices count offset : Unpickle<Vertex []> =
 
 let u_lumpVertices size offset : Unpickle<LumpVertices> =
     u_lookAhead (u_vertices (size / vertexSize) offset) |>> fun vertices -> { Vertices = vertices }
-
-[<Literal>] 
-let nodeSize = 28
-let u_node : Unpickle<Node> =
-    u_pipe8 u_uint16 u_uint16 u_uint16 u_uint16 u_uint64 u_uint64 u_uint16 u_uint16 <|
-    fun startLineX startLineY endLineX endLineY rightBoundingBox leftBoundingBox rightChild leftChild ->
-        let bitNumber = 15
-        let rightBit = (int rightChild &&& (1 <<< bitNumber)) <> 0;
-        let leftBit = (int leftChild &&& (1 <<< bitNumber)) <> 0;
-
-        let rightChildType =
-            if rightBit = false then
-                ChildNodeType.Subnode
-            else
-                ChildNodeType.Subsector
-
-        let leftChildType =
-            if leftBit = false then
-                ChildNodeType.Subnode
-            else
-                ChildNodeType.Subsector
-
-        Node (startLineX, startLineY, endLineX, endLineY, rightBoundingBox, leftBoundingBox, rightChild, leftChild, rightChildType, leftChildType)
-
-let u_nodes count offset : Unpickle<Node []> =
-    u_skipBytes offset >>. u_array count u_node
-
-let u_lumpNodes size offset : Unpickle<LumpNodes> =
-    u_lookAhead (u_nodes (size / nodeSize) offset) |>> fun nodes -> { Nodes = nodes }
-
-[<Literal>] 
-let subsectorSize = 4
-let u_subsector : Unpickle<Subsector> =
-    u_pipe2 u_uint16 u_uint16 <|
-    fun segCount firstSegNumber ->
-        Subsector (int segCount, int firstSegNumber)
-
-let u_subsectors count offset : Unpickle<Subsector []> =
-    u_skipBytes offset >>. u_array count u_subsector
-
-let u_lumpSubsectors size offset : Unpickle<LumpSubsectors> =
-    u_lookAhead (u_subsectors (size / subsectorSize) offset) |>> fun subsectors -> { Subsectors = subsectors }
 
 [<Literal>]
 let sectorSize = 26

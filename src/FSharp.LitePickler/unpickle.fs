@@ -31,33 +31,33 @@ open Microsoft.FSharp.NativeInterop
 #nowarn "9"
 #nowarn "51"
 
-type LiteReadStream = {
+type LiteReadStream = private {
     mutable bytes: byte []
     mutable position: int
     Stream: Stream option }
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module LiteReadStream =
-    let inline ofBytes bytes = { bytes = bytes; position = 0; Stream = None }
+    let ofBytes bytes = { bytes = bytes; position = 0; Stream = None }
 
-    let inline ofStream stream = { bytes = Array.empty; position = -1; Stream = Some stream }
+    let ofStream stream = { bytes = Array.empty; position = -1; Stream = Some stream }
 
-    let inline position lstream =
+    let position lstream =
         match lstream.Stream with
         | None -> int64 lstream.position
         | Some stream -> stream.Position
 
-    let inline seek offset lstream =
+    let seek offset lstream =
         match lstream.Stream with
         | None ->  lstream.position <- int offset
         | Some stream -> stream.Position <- offset
 
-    let inline skip (n: int64) lstream = 
+    let skip (n: int64) lstream = 
         match lstream.Stream with
         | None -> lstream.position <- lstream.position + int n
         | Some stream -> stream.Position <- stream.Position + n
 
-    let inline readByte lstream =
+    let readByte lstream =
         match lstream.Stream with
         | None ->
             let result = lstream.bytes.[int lstream.position]
@@ -68,7 +68,7 @@ module LiteReadStream =
             | -1 -> failwith "Unable to read byte from stream."
             | result -> byte result
 
-    let inline readBytes n lstream =
+    let readBytes n lstream =
         match lstream.Stream with
         | None ->
             let i = lstream.position
@@ -79,7 +79,7 @@ module LiteReadStream =
             stream.Read (bytes, 0, n) |> ignore
             bytes
 
-    let inline readString (n: int) lstream =
+    let readString (n: int) lstream =
         match lstream.Stream with
         | None ->
             let s : nativeptr<sbyte> = (NativePtr.ofNativeInt <| NativePtr.toNativeInt &&lstream.bytes.[int lstream.position])
@@ -92,7 +92,7 @@ module LiteReadStream =
             let s : nativeptr<sbyte> = NativePtr.ofNativeInt <| NativePtr.toNativeInt &&bytes.[0]
             String (s, 0, int n)
 
-    let inline read<'a when 'a : unmanaged> lstream =
+    let read<'a when 'a : unmanaged> lstream =
         match lstream.Stream with
         | None ->
             let result = NativePtr.read (NativePtr.ofNativeInt<'a> <| NativePtr.toNativeInt &&lstream.bytes.[int lstream.position])
